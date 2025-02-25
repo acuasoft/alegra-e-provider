@@ -1,26 +1,20 @@
-import unittest
-from unittest.mock import Mock, patch
+import vcr
+from vcr.unittest import VCRTestCase
 
 from alegra.client import ApiClient
 from alegra.config import ApiConfig
-from alegra.models.company import (
-    Address,
-    Certificate,
-    Company,
-    GovernmentStatus,
-    NotificationByEmail,
-    Webhook,
-    Webhooks,
-)
+from alegra.models.company import Address, Company, GovernmentStatus
 
 
-class TestCompanyResource(unittest.TestCase):
+class TestCompanyResource(VCRTestCase):
     def setUp(self):
-        self.config = ApiConfig(
-            api_key="REDACTED", environment="sandbox"
-        )
+        self.config = ApiConfig(api_key="REDACTED", environment="sandbox")
         self.client = ApiClient(self.config)
 
+    @vcr.use_cassette(
+        "tests/fixtures/vcr_cassettes/test_create_company.yaml",
+        filter_headers=["authorization"],
+    )
     def test_create_company(self):
         company_data = Company(
             name="Soluciones Alegra S.A.S",

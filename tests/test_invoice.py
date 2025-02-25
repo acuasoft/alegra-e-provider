@@ -1,20 +1,21 @@
-import unittest
+import vcr
+from vcr.unittest import VCRTestCase
 
 from alegra.client import ApiClient
 from alegra.config import ApiConfig
-from alegra.models.company import Address, Company, GovernmentStatus
 from alegra.models.invoice import Invoice
 
 
-class TestCompanyResource(unittest.TestCase):
+class TestCompanyResource(VCRTestCase):
     def setUp(self):
-        self.config = ApiConfig(
-            api_key="REDACTED", environment="sandbox"
-        )
+        self.config = ApiConfig(api_key="REDACTED", environment="sandbox")
         self.client = ApiClient(self.config)
 
+    @vcr.use_cassette(
+        "tests/fixtures/vcr_cassettes/test_create_invoice.yaml",
+        filter_headers=["authorization"],
+    )
     def test_create_invoice(self):
-
         invoice_data = Invoice(
             **{
                 "documentType": "01",

@@ -1,0 +1,64 @@
+interactions:
+- request:
+    body: '{"documentType": "01", "resolution": {"resolutionNumber": "18760000001",
+      "prefix": "SETP", "minNumber": 990000000, "maxNumber": 995000000, "startDate":
+      "2019-01-19", "endDate": "2030-01-19", "technicalKey": "fc8eac422eba16e22ffd8c6f94b3f40a6e38162c"},
+      "company": {"id": "01HTJ3D9NZA79Z6BRNHB19C6Z0"}, "customer": {"name": "Customer
+      Name", "organizationType": 2, "identificationType": "13", "identificationNumber":
+      "222222222222", "dv": "2", "email": "email@email.com", "address": {"address":
+      "Cra. 13 #12-12 Edificio A & A", "city": "11001", "department": "11", "country":
+      "CO"}, "phone": "3223334455"}, "number": 990015000, "note": "Nota relativa al
+      documento", "items": [{"code": "BM3", "description": "Botella de M3", "price":
+      10000.0, "quantity": 1, "unitCode": "94", "note": "", "subtotal": 10000.0, "taxAmount":
+      1900.0, "total": 11900.0, "discount": 0.0, "discountAmount": 0.0, "taxes": [{"taxCode":
+      "01", "taxAmount": 1900.0, "taxPercentage": "19.00", "taxableAmount": 10000.0}]}],
+      "payments": [{"paymentForm": "1", "paymentMethod": "10", "paymentDueDate": "2021-08-30"}],
+      "discountsAndCharges": [], "totalAmounts": {"grossTotal": 10000.0, "taxableTotal":
+      10000.0, "taxTotal": 1900.0, "discountTotal": 0.0, "chargeTotal": 0.0, "advanceTotal":
+      0.0, "payableTotal": 11900.0, "currencyCode": "COP"}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1303'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.3
+    method: POST
+    uri: https://sandbox-api.alegra.com/e-provider/col/v1/invoices
+  response:
+    body:
+      string: "{\"invoice\":{\"id\":\"01JMZ1SMYJW51VAC1G2W38PJVR\",\"companyIdentification\":\"1144145424\",\"customerIdentification\":\"222222222222\",\"type\":\"STANDARD\",\"cufe\":\"d31239c3e9629734229b5c2e7fc212af8aa585600bbf2927a8066419e624d017126bac9437fc78ce44bf24356174c59a\",\"date\":\"2025-02-25T12:17:11-05:00\",\"prefix\":\"SETP\",\"number\":990015000,\"fullNumber\":\"SETP990015000\",\"status\":\"SENT\",\"legalStatus\":\"REJECTED\",\"governmentResponse\":{\"code\":\"99\",\"message\":\"Validaci\xF3n
+        contiene errores en campos mandatorios.\",\"errorMessages\":[\"Regla: FAB10b,
+        Rechazo: El prefijo no corresponde al prefijo de la autorizaci\xF3n de numeraci\xF3n\",\"Regla:
+        FAB11b, Rechazo: Valor inicial del rango de numeraci\xF3n informado no corresponde
+        a un valor inicial de los rangos vigente para el contribuyente emisor.\",\"Regla:
+        FAB12b, Rechazo: Valor final del rango de numeraci\xF3n informado no corresponde
+        a un valor final de los rangos vigentes para el contribuyente emisor.\",\"Regla:
+        FAJ43b, Notificaci\xF3n: Nombre informado No corresponde al registrado en
+        el RUT con respecto al Nit suminstrado.\"]},\"xmlFileName\":\"fv11441454240852500000023.xml\",\"zipFileName\":\"z11441454240852500000024.zip\",\"qrCodeContent\":\"NumFac:
+        SETP990015000\\nFecFac: 2025-02-25\\nHorFac: 12:17:11-05:00\\nNitFac: 1144145424\\nDocAdq:
+        222222222222\\nValFac: 10000.00\\nValIva: 1900.00\\nValOtroIm: 0.000.00\\nValTolFac:
+        11900.00\\nCUFE: d31239c3e9629734229b5c2e7fc212af8aa585600bbf2927a8066419e624d017126bac9437fc78ce44bf24356174c59a\\nQRCode:
+        https://catalogo-vpfe-hab.dian.gov.co/document/searchqr?documentkey=d31239c3e9629734229b5c2e7fc212af8aa585600bbf2927a8066419e624d017126bac9437fc78ce44bf24356174c59a\"}}"
+    headers:
+      Apigw-Requestid:
+      - GjQrriD8IAMEVYw=
+      - GjQrriWeIAMEPbg=
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1615'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 25 Feb 2025 17:17:12 GMT
+    status:
+      code: 201
+      message: Created
+version: 1

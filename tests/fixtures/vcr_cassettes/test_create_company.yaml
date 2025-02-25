@@ -1,0 +1,43 @@
+interactions:
+- request:
+    body: '{"name": "Soluciones Alegra S.A.S", "identification": "111111111", "dv":
+      "2", "useAlegraCertificate": true, "organizationType": 1, "identificationType":
+      "31", "regimeCode": "R-99-PN", "email": "email@email.com", "phone": "1234567890",
+      "address": {"address": "Cra. 13 #12-12 Edificio A & A", "city": "11001", "department":
+      "11", "country": "CO"}, "governmentStatus": {"payrolls": "AUTHORIZED"}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '393'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.3
+    method: POST
+    uri: https://sandbox-api.alegra.com/e-provider/col/v1/companies
+  response:
+    body:
+      string: '{"company":{"id":"01JMZ1SM8JDHAPF4VSFC595WAK","name":"Soluciones Alegra
+        S.A.S","identification":"111111111","dv":"2","type":"associated","useAlegraCertificate":true,"governmentStatus":{},"notificationByEmail":{"enabled":false},"webhooks":{},"organizationType":1,"identificationType":"31","regimeCode":"R-99-PN","email":"email@email.com","phone":"1234567890","address":{"address":"Cra.
+        13 #12-12 Edificio A & A","city":"11001","department":"11","country":"CO"}}}'
+    headers:
+      Apigw-Requestid:
+      - GjQrmikwoAMEM0w=
+      - GjQrmjEOoAMEP7g=
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '461'
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 25 Feb 2025 17:17:10 GMT
+    status:
+      code: 201
+      message: Created
+version: 1

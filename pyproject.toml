@@ -5,3 +5,12 @@ versionfile_source = "alegra/_version.py"
 versionfile_build = "_version.py"
 tag_prefix = ""
 
+
+[tool.ruff]
+extend-exclude = [
+    "alegra/_version.py",
+    "versioneer.py"
+]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
