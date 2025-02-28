@@ -1,6 +1,7 @@
 from datetime import datetime
 from enum import Enum
 from typing import List, Optional
+
 from pydantic import BaseModel
 
 from alegra.models.customer import Customer
@@ -23,7 +24,7 @@ class AssociatedDocuments(BaseModel):
 
 
 class BaseNote(BaseModel):
-    associatedDocuments: AssociatedDocuments
+    associatedDocuments: List[AssociatedDocuments]
     company: CompanyID
     customer: Customer
     prefix: str
@@ -53,7 +54,7 @@ class CreditNote(BaseNote):
 
 
 class DebitNote(BaseNote):
-    class DebitNoteConcept(Enum):
+    class DebitNoteConcept(str, Enum):
         INTEREST = "1"
         BILLABLE_EXPENSES = "2"
         VALUE_CHANGE = "3"
@@ -65,7 +66,7 @@ class DebitNote(BaseNote):
 class NoteResponse(BaseModel):
     id: str
     companyIdentification: str
-    customerIdentification: Optional[str]
+    customerIdentification: Optional[str] = None
     type: str
     cude: str
     date: datetime

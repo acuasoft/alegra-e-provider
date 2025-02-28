@@ -1,10 +1,10 @@
-import requests
 import httpx
+import requests
 
 from alegra.config import ApiConfig
 from alegra.models.company import Company
 from alegra.models.dian import DianResource
-from alegra.models.invoice import Invoice, InvoiceResponse, FileResponse
+from alegra.models.invoice import FileResponse, Invoice, InvoiceResponse
 from alegra.models.note import CreditNote, DebitNote, NoteResponse
 from alegra.models.payroll import Payroll
 from alegra.models.test_set import TestSet
@@ -142,7 +142,7 @@ class ApiClient:
         )
         self.credit_notes = ResourceFactory(
             self,
-            "credit_notes",
+            "credit-notes",
             self._request,
             {
                 "create": {
@@ -170,18 +170,18 @@ class ApiClient:
         )
         self.debit_notes = ResourceFactory(
             self,
-            "debit_notes",
+            "debit-notes",
             self._request,
             {
                 "create": {
                     "model": DebitNote,
                     "response_model": NoteResponse,
-                    "response_key": "DebitNote",
+                    "response_key": "debitNote",
                 },
                 "get": {
                     "model": DebitNote,
                     "response_model": NoteResponse,
-                    "response_key": "DebitNote",
+                    "response_key": "debitNote",
                 },
                 "perform__file_xml": {
                     "model": FileResponse,
@@ -192,7 +192,7 @@ class ApiClient:
                 "list": {
                     "model": NoteResponse,
                     "response_model": NoteResponse,
-                    "response_key": "DebitNotes",
+                    "response_key": "debitNotes",
                 },
             },
         )
