@@ -1,0 +1,58 @@
+interactions:
+- request:
+    body: '{"associatedDocuments": [{"date": "2025-02-26", "documentType": "01", "number":
+      995000000, "prefix": "SETP", "uuid": "a452a6c20b15927c0a234ef6d28e638aecd4f7fcfe22368942f4fb3e3590cd0e993fe5a8973172e087aa3030b240353c"}],
+      "company": {"id": "01JN298D48XKSBK5T4XXKD27DS"}, "customer": {"name": "Customer
+      Name", "organizationType": 2, "identificationType": "13", "identificationNumber":
+      "222222222222", "dv": "2", "email": "email@email.com", "address": {"address":
+      "Cra. 13 #12-12 Edificio A & A", "city": "11001", "department": "11", "country":
+      "CO"}, "phone": "3223334455"}, "prefix": "NC", "number": 1, "note": "Anulaci\u00f3n
+      de factura", "items": [{"code": "BM3", "description": "Botella de M3", "price":
+      10000.0, "quantity": 1, "unitCode": "94", "note": "", "subtotal": 10000.0, "taxAmount":
+      1900.0, "total": 11900.0, "discount": 0.0, "discountAmount": 0.0, "taxes": [{"taxCode":
+      "01", "taxAmount": 1900.0, "taxPercentage": "19.00", "taxableAmount": 10000.0}]}],
+      "payments": [{"paymentForm": "1", "paymentMethod": "ZZZ", "paymentDueDate":
+      "2025-02-26"}], "discountsAndCharges": [], "totalAmounts": {"grossTotal": 10000.0,
+      "taxableTotal": 10000.0, "taxTotal": 1900.0, "discountTotal": 0.0, "chargeTotal":
+      0.0, "advanceTotal": 0.0, "payableTotal": 11900.0, "currencyCode": "COP"}, "documentType":
+      "91", "conceptCode": "2"}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1320'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.3
+    method: POST
+    uri: https://sandbox-api.alegra.com/e-provider/col/v1/credit-notes
+  response:
+    body:
+      string: "{\"creditNote\":{\"id\":\"01JN4Y835SSMBFQ0CM1FFXGSYE\",\"companyIdentification\":\"900559088\",\"type\":\"STANDARD\",\"cude\":\"509e8a480479af912d85f29d137b88ea42540e9563eafd14b2a5d7bfff6a801edec2ad8adf4e8006078237b82a2e12dd\",\"date\":\"2025-02-27T19:10:37-05:00\",\"prefix\":\"NC\",\"number\":1,\"fullNumber\":\"NC1\",\"status\":\"SENT\",\"legalStatus\":\"REJECTED\",\"governmentResponse\":{\"code\":\"99\",\"message\":\"Validaci\xF3n
+        contiene errores en campos mandatorios.\",\"errorMessages\":[\"Regla: 90,
+        Rechazo: Documento procesado anteriormente.\"]},\"xmlFileName\":\"nc090055908808525000000EC.xml\",\"zipFileName\":\"z090055908808525000000F1.zip\",\"qrCodeContent\":\"NumFac:
+        NC1\\nFecFac: 2025-02-27\\nHorFac: 07:10:37-05:00\\nNitFac: 900559088\\nDocAdq:
+        222222222222\\nValFac: 10000.00\\nValIva: 1900.00\\nValOtroIm: 0.000.00\\nValTolFac:
+        11900.00\\nCUDE: 509e8a480479af912d85f29d137b88ea42540e9563eafd14b2a5d7bfff6a801edec2ad8adf4e8006078237b82a2e12dd\\nQRCode:
+        https://catalogo-vpfe-hab.dian.gov.co/document/searchqr?documentkey=509e8a480479af912d85f29d137b88ea42540e9563eafd14b2a5d7bfff6a801edec2ad8adf4e8006078237b82a2e12dd\"}}"
+    headers:
+      Apigw-Requestid:
+      - GqzG_hIjoAMEVEg=
+      - GqzG_jvCoAMEZNA=
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '1065'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 28 Feb 2025 00:10:38 GMT
+    status:
+      code: 201
+      message: Created
+version: 1

@@ -6,7 +6,7 @@ from alegra.config import ApiConfig
 from alegra.models.invoice import Invoice
 
 
-class TestCompanyResource(VCRTestCase):
+class TestInvoiceResource(VCRTestCase):
     def setUp(self):
         self.config = ApiConfig(api_key="REDACTED", environment="sandbox")
         self.client = ApiClient(self.config)
