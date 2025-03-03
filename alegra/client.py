@@ -1,10 +1,11 @@
-import requests
 import httpx
+import requests
 
 from alegra.config import ApiConfig
 from alegra.models.company import Company
 from alegra.models.dian import DianResource
-from alegra.models.invoice import Invoice, InvoiceResponse, FileResponse
+from alegra.models.invoice import FileResponse, Invoice, InvoiceResponse
+from alegra.models.note import CreditNote, DebitNote, NoteResponse
 from alegra.models.payroll import Payroll
 from alegra.models.test_set import TestSet
 from alegra.resources.factory import ResourceFactory
@@ -136,6 +137,62 @@ class ApiClient:
                     "model": InvoiceResponse,
                     "response_model": InvoiceResponse,
                     "response_key": "invoices",
+                },
+            },
+        )
+        self.credit_notes = ResourceFactory(
+            self,
+            "credit-notes",
+            self._request,
+            {
+                "create": {
+                    "model": CreditNote,
+                    "response_model": NoteResponse,
+                    "response_key": "creditNote",
+                },
+                "get": {
+                    "model": CreditNote,
+                    "response_model": NoteResponse,
+                    "response_key": "creditNote",
+                },
+                "perform__file_xml": {
+                    "model": FileResponse,
+                    "endpoint_suffix": "files/XML",
+                    "response_model": FileResponse,
+                    "response_key": "file",
+                },
+                "list": {
+                    "model": NoteResponse,
+                    "response_model": NoteResponse,
+                    "response_key": "creditNotes",
+                },
+            },
+        )
+        self.debit_notes = ResourceFactory(
+            self,
+            "debit-notes",
+            self._request,
+            {
+                "create": {
+                    "model": DebitNote,
+                    "response_model": NoteResponse,
+                    "response_key": "debitNote",
+                },
+                "get": {
+                    "model": DebitNote,
+                    "response_model": NoteResponse,
+                    "response_key": "debitNote",
+                },
+                "perform__file_xml": {
+                    "model": FileResponse,
+                    "endpoint_suffix": "files/XML",
+                    "response_model": FileResponse,
+                    "response_key": "file",
+                },
+                "list": {
+                    "model": NoteResponse,
+                    "response_model": NoteResponse,
+                    "response_key": "debitNotes",
                 },
             },
         )
