@@ -157,14 +157,54 @@ print(test_set.id, test_set.type)
 
 ## Error Handling
 
-The client raises exceptions for HTTP errors, which can be caught and handled appropriately.
+The library provides comprehensive error handling with specific exception classes for different types of errors:
+
+### Exception Classes
+
+- **`AlegraApiError`**: Base class for all API-related errors
+- **`AlegraHttpError`**: General HTTP errors with detailed information
+- **`AlegraAuthenticationError`**: Authentication failures (401)
+- **`AlegraAuthorizationError`**: Authorization failures (403)
+- **`AlegraNotFoundError`**: Resource not found (404)
+- **`AlegraValidationError`**: Validation errors (422)
+- **`AlegraRateLimitError`**: Rate limit exceeded (429)
+- **`AlegraServerError`**: Server errors (5xx)
+- **`AlegraResponseParseError`**: Response parsing failures
+- **`AlegraConfigurationError`**: Configuration errors
+
+### Usage Example
 
 ```python
+from alegra import ApiClient, ApiConfig, AlegraAuthenticationError, AlegraNotFoundError
+
 try:
-    new_company = client.companies.create(company_data)
-except requests.exceptions.RequestException as e:
-    print(f"An error occurred: {e}")
+    config = ApiConfig(api_key="your_api_key", environment="production")
+    client = ApiClient(config)
+    
+    # This might raise various exceptions
+    invoice = client.invoices.get("some_invoice_id")
+    
+except AlegraAuthenticationError as e:
+    print(f"Authentication failed: {e}")
+    print(f"Status code: {e.status_code}")
+    
+except AlegraNotFoundError as e:
+    print(f"Invoice not found: {e}")
+    print(f"URL: {e.url}")
+    
+except AlegraApiError as e:
+    print(f"API error occurred: {e}")
+    if e.response:
+        print(f"Response data: {e.response}")
 ```
+
+### Error Information
+
+All HTTP error exceptions include:
+- `status_code`: HTTP status code
+- `response_text`: Raw response text
+- `url`: The URL that was requested
+- `response`: Parsed response data (when available)
 
 ## License
 
