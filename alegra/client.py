@@ -29,7 +29,12 @@ class ApiClient:
     def _sync_request(self, method, endpoint, **kwargs):
         url = f"{self.base_url}/{endpoint}"
         with requests.Session() as session:
-            session.headers.update({"Authorization": f"Bearer {self.config.api_key}"})
+            session.headers.update(
+                {
+                    "Authorization": f"Bearer {self.config.api_key}",
+                    "Accept": "application/json",
+                }
+            )
             response = session.request(method, url, **kwargs)
             return response.json()
 

@@ -22,7 +22,7 @@ class ApiResource:
     def _parse_response(self, response, action: str):
         response_key = self.actions_config[action].get("response_key")
         if response_key:
-            if not response_key in response:
+            if response_key not in response:
                 if response.get("message"):
                     raise ValueError(response.get("message"))
                 if response.get("errors"):
@@ -35,6 +35,8 @@ class ApiResource:
         return model.model_validate(response_data)
 
     def _prepare_data(self, data: BaseModel):
+        if data is None:
+            return {}
         data = data.model_dump()
         if "customer" in data:
             customer_data = data["customer"]
@@ -121,10 +123,13 @@ class ApiResource:
             )
         endpoint_suffix = self.actions_config[action].get("endpoint_suffix", subaction)
         endpoint = f"{self.endpoint}/{resource_id}/{endpoint_suffix}"
+
+        kwargs = {}
+        if data:
+            kwargs["json"] = self._prepare_data(data)
+
         response = self.request_method(
-            self._request_method_for_subaction(subaction),
-            endpoint,
-            json=self._prepare_data(data) if data else {},
+            self._request_method_for_subaction(subaction), endpoint, **kwargs
         )
         return self._parse_response(response, action)
 
