@@ -8,7 +8,7 @@ from alegra.models.customer import Customer
 
 class Resolution(BaseModel):
     resolutionNumber: str
-    prefix: str
+    prefix: str | None = None
     minNumber: int
     maxNumber: int
     startDate: str
