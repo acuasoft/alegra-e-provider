@@ -93,7 +93,7 @@ class InvoiceResponse(BaseModel):
     type: str
     cufe: str
     date: datetime
-    prefix: str
+    prefix: str | None = None
     number: int
     fullNumber: str
     status: str
