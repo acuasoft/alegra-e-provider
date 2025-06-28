@@ -42,6 +42,12 @@ class ApiResource:
             customer_data = data["customer"]
             if customer_data["dv"] is None:
                 del customer_data["dv"]
+
+        if "resolution" in data:
+            resolution_data = data["resolution"]
+            if resolution_data.get("prefix") is None:
+                del resolution_data["prefix"]
+
         return {k: v for k, v in data.items() if v is not None}
 
     def get(self, resource_id: str):
