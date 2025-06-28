@@ -1,6 +1,8 @@
 from typing import Callable, Dict
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+
+from alegra.exceptions import AlegraApiError, AlegraResponseParseError
 
 
 class ApiResource:
@@ -20,19 +22,52 @@ class ApiResource:
         return action in self.actions_config
 
     def _parse_response(self, response, action: str):
-        response_key = self.actions_config[action].get("response_key")
-        if response_key:
-            if response_key not in response:
-                if response.get("message"):
-                    raise ValueError(response.get("message"))
-                if response.get("errors"):
-                    raise ValueError(response.get("errors"))
-                raise ValueError(f"Response key '{response_key}' not found in response")
-            response_data = response.get(response_key, response)
-        else:
-            response_data = response
-        model = self.actions_config[action]["response_model"]
-        return model.model_validate(response_data)
+        """Parse API response and return validated model instance."""
+        try:
+            # Get the expected response key from configuration
+            response_key = self.actions_config[action].get("response_key")
+
+            if response_key:
+                # Check if expected response key exists in response
+                if response_key not in response:
+                    # Provide detailed error information
+                    error_details = []
+                    if response.get("message"):
+                        error_details.append(f"API message: {response.get('message')}")
+                    if response.get("errors"):
+                        error_details.append(f"API errors: {response.get('errors')}")
+                    if response.get("error"):
+                        error_details.append(f"API error: {response.get('error')}")
+
+                    error_msg = f"Expected response key '{response_key}' not found in API response for action '{action}' on endpoint '{self.endpoint}'"
+                    if error_details:
+                        error_msg += f". {'. '.join(error_details)}"
+                    else:
+                        error_msg += f". Available keys: {list(response.keys()) if isinstance(response, dict) else 'N/A'}"
+
+                    raise AlegraApiError(error_msg, response=response)
+
+                response_data = response.get(response_key)
+            else:
+                response_data = response
+
+            # Get the model class for validation
+            model_class = self.actions_config[action].get("response_model")
+            if not model_class:
+                # If no response model is configured, return raw data
+                return response_data
+
+            # Validate response data against the model
+            try:
+                return model_class.model_validate(response_data)
+            except ValidationError as e:
+                error_msg = f"Failed to validate response data for action '{action}' on endpoint '{self.endpoint}'"
+                error_msg += f". Validation errors: {e.errors()}"
+                raise AlegraResponseParseError(error_msg, str(response_data), e)
+
+        except (KeyError, AttributeError) as e:
+            error_msg = f"Configuration error for action '{action}' on endpoint '{self.endpoint}': {str(e)}"
+            raise AlegraApiError(error_msg, response=response)
 
     def _prepare_data(self, data: BaseModel):
         if data is None:
@@ -103,7 +138,15 @@ class ApiResource:
             )
         endpoint = f"{self.endpoint}/{resource_id}"
         response = self.request_method("DELETE", endpoint)
-        return response.status_code == 204
+
+        # Handle different success status codes for DELETE
+        if hasattr(response, "status_code"):
+            return response.status_code in [200, 204]
+        elif isinstance(response, dict) and "status_code" in response:
+            return response["status_code"] in [200, 204]
+        else:
+            # If we get here, it means the request was successful (no exception raised)
+            return True
 
     def list(self, params=None):
         action = "list"
