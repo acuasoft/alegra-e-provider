@@ -4,7 +4,7 @@ interactions:
       "prefix": "SETP", "minNumber": 990000000, "maxNumber": 995000000, "startDate":
       "2019-01-19", "endDate": "2030-01-19", "technicalKey": "fc8eac422eba16e22ffd8c6f94b3f40a6e38162c"},
       "company": {"id": "01HTJ3D9NZA79Z6BRNHB19C6Z0"}, "customer": {"name": "Customer
-      Name", "organizationType": 2, "identificationType": "13", "identificationNumber":
+      Name", "taxCode": "01", "organizationType": 2, "identificationType": "13", "identificationNumber":
       "222222222222", "dv": "2", "email": "email@email.com", "address": {"address":
       "Cra. 13 #12-12 Edificio A & A", "city": "11001", "department": "11", "country":
       "CO"}, "phone": "3223334455"}, "number": 990015000, "note": "Nota relativa al
