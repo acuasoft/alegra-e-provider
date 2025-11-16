@@ -20,7 +20,7 @@ dependencies = [
 include = ["alegra", "alegra.*"]
 
 [tool.setuptools.dynamic]
-version = {attr = "versioneer.get_version"}
+version = {attr = "alegra.__version__"}
 
 [tool.versioneer]
 VCS = "git"
