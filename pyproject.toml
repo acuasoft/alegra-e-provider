@@ -9,7 +9,7 @@ description = "Alegra E-Provider, Python Wrapper for Alegra Electronic Provider 
 authors = [
     {name = "Luis Martinez"}
 ]
-requires-python = ">=3.6, <3.14"
+requires-python = ">=3.8, <3.14"
 dependencies = [
     "pydantic[email]==2.8.2",
     "requests==2.32.3",
