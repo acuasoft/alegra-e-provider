@@ -39,6 +39,7 @@ class TestInvoiceResource(VCRTestCase):
                         "country": "CO",
                     },
                     "name": "Customer Name",
+                    "taxCode": {"id": "01"},
                     "organizationType": 2,
                     "identificationType": "13",
                     "identificationNumber": "222222222222",
