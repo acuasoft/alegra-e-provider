@@ -2,8 +2,18 @@
 import json
 import warnings
 
+from pydantic.warnings import PydanticDeprecatedSince20
+
 from alegra.models.address import Address
 from alegra.models.company import Company
+
+
+def _has_pydantic_deprecation_warnings(warning_list):
+    """Helper to check if warning list contains Pydantic deprecation warnings."""
+    return any(
+        issubclass(w.category, PydanticDeprecatedSince20)
+        for w in warning_list
+    )
 
 
 class TestModelSerialization:
@@ -33,11 +43,7 @@ class TestModelSerialization:
             json_str = company_data.model_dump_json()
             
             # Should not generate any deprecation warnings
-            pydantic_warnings = [
-                warning for warning in w 
-                if "PydanticDeprecated" in str(warning.category)
-            ]
-            assert len(pydantic_warnings) == 0, (
+            assert not _has_pydantic_deprecation_warnings(w), (
                 "model_dump_json() should not generate deprecation warnings"
             )
 
@@ -71,14 +77,15 @@ class TestModelSerialization:
             json_str = company_data.json()
             
             # Should generate a deprecation warning
-            pydantic_warnings = [
-                warning for warning in w 
-                if "PydanticDeprecated" in str(warning.category)
-            ]
-            assert len(pydantic_warnings) > 0, (
+            assert _has_pydantic_deprecation_warnings(w), (
                 "json() should generate a PydanticDeprecatedSince20 warning"
             )
-            assert "model_dump_json" in str(pydantic_warnings[0].message)
+            # Verify the warning message mentions the replacement
+            deprecation_warnings = [
+                warning for warning in w 
+                if issubclass(warning.category, PydanticDeprecatedSince20)
+            ]
+            assert any("model_dump_json" in str(w.message) for w in deprecation_warnings)
 
     def test_model_dump_for_dict_serialization(self):
         """Test that model_dump() works correctly for dict serialization."""
@@ -104,11 +111,7 @@ class TestModelSerialization:
             data_dict = company_data.model_dump()
             
             # Should not generate any deprecation warnings
-            pydantic_warnings = [
-                warning for warning in w 
-                if "PydanticDeprecated" in str(warning.category)
-            ]
-            assert len(pydantic_warnings) == 0, (
+            assert not _has_pydantic_deprecation_warnings(w), (
                 "model_dump() should not generate deprecation warnings"
             )
 
