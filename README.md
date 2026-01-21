@@ -166,6 +166,36 @@ except requests.exceptions.RequestException as e:
     print(f"An error occurred: {e}")
 ```
 
+## Working with Pydantic Models
+
+This library uses Pydantic V2 for data validation. When working with models, use the Pydantic V2 API:
+
+### Serializing Models to JSON
+
+```python
+from models.company import Company
+
+company = Company(...)
+
+# ✅ Correct - Use model_dump_json() (Pydantic V2)
+json_string = company.model_dump_json()
+
+# ❌ Deprecated - Avoid using json() (will be removed in Pydantic V3)
+json_string = company.json()  # Generates deprecation warning
+```
+
+### Serializing Models to Dictionary
+
+```python
+# ✅ Correct - Use model_dump() (Pydantic V2)
+data_dict = company.model_dump()
+
+# ❌ Deprecated - Avoid using dict() (will be removed in Pydantic V3)
+data_dict = company.dict()  # Generates deprecation warning
+```
+
+For more information, see the [Pydantic V2 Migration Guide](https://docs.pydantic.dev/latest/migration/).
+
 ## License
 
 This project is licensed under the MIT License.
