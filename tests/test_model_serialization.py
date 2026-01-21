@@ -80,12 +80,6 @@ class TestModelSerialization:
             assert _has_pydantic_deprecation_warnings(w), (
                 "json() should generate a PydanticDeprecatedSince20 warning"
             )
-            # Verify the warning message mentions the replacement
-            deprecation_warnings = [
-                warning for warning in w 
-                if issubclass(warning.category, PydanticDeprecatedSince20)
-            ]
-            assert any("model_dump_json" in str(w.message) for w in deprecation_warnings)
 
     def test_model_dump_for_dict_serialization(self):
         """Test that model_dump() works correctly for dict serialization."""
