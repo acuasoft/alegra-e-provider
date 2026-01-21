@@ -21,10 +21,9 @@ class TestModelSerialization:
             email="test@example.com",
             address=Address(
                 address="Test St",
-                city="Test City",
-                countryCode="CO",
-                countrySubdivisionCode="11",
-                postalZone="110111",
+                city="11001",
+                department="11",
+                country="CO",
             ),
         )
 
@@ -60,10 +59,9 @@ class TestModelSerialization:
             email="test@example.com",
             address=Address(
                 address="Test St",
-                city="Test City",
-                countryCode="CO",
-                countrySubdivisionCode="11",
-                postalZone="110111",
+                city="11001",
+                department="11",
+                country="CO",
             ),
         )
 
@@ -94,10 +92,9 @@ class TestModelSerialization:
             email="test@example.com",
             address=Address(
                 address="Test St",
-                city="Test City",
-                countryCode="CO",
-                countrySubdivisionCode="11",
-                postalZone="110111",
+                city="11001",
+                department="11",
+                country="CO",
             ),
         )
 

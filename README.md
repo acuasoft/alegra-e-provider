@@ -173,7 +173,7 @@ This library uses Pydantic V2 for data validation. When working with models, use
 ### Serializing Models to JSON
 
 ```python
-from models.company import Company
+from alegra.models.company import Company
 
 company = Company(...)
 
