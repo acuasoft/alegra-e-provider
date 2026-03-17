@@ -3,7 +3,7 @@ from vcr.unittest import VCRTestCase
 
 from alegra.client import ApiClient
 from alegra.config import ApiConfig
-from alegra.models.company import Address, Company, GovernmentStatus
+from alegra.models.company import Address, Company, GovernmentStatus, TaxCode
 
 
 class TestCompanyResource(VCRTestCase):
@@ -25,6 +25,7 @@ class TestCompanyResource(VCRTestCase):
             organizationType=1,
             identificationType="31",
             regimeCode="R-99-PN",
+            taxCode=TaxCode(id="ZZ"),
             email="email@email.com",
             phone="1234567890",
             address=Address(
@@ -41,6 +42,7 @@ class TestCompanyResource(VCRTestCase):
         self.assertEqual(company.identification, "111111111")
         self.assertEqual(company.dv, "2")
         self.assertTrue(company.useAlegraCertificate)
+        self.assertEqual(company.taxCode.id, "ZZ")
         self.assertEqual(company.organizationType, 1)
         self.assertEqual(company.identificationType, "31")
         self.assertEqual(company.regimeCode, "R-99-PN")

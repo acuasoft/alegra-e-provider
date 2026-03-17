@@ -1,4 +1,5 @@
 import re
+from enum import Enum
 from typing import Dict, Optional
 
 from pydantic import BaseModel, EmailStr, field_validator, model_validator
@@ -51,6 +52,16 @@ class NotificationByEmail(BaseModel):
     enabled: bool = False
 
 
+class TaxCode(BaseModel):
+    class TaxType(str, Enum):
+        IVA = "01"
+        INC = "04"
+        IVA_AND_INC = "ZA"
+        NOT_APPLICABLE = "ZZ"
+
+    id: TaxType
+
+
 class Company(BaseModel):
     id: Optional[str] = None
     name: str
@@ -61,6 +72,7 @@ class Company(BaseModel):
     organizationType: int
     identificationType: str
     regimeCode: str = ""
+    taxCode: TaxCode
     email: EmailStr
     phone: Optional[str] = ""
     address: Address

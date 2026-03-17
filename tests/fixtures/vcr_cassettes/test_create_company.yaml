@@ -23,7 +23,7 @@ interactions:
   response:
     body:
       string: '{"company":{"id":"01JMZ1SM8JDHAPF4VSFC595WAK","name":"Soluciones Alegra
-        S.A.S","identification":"111111111","dv":"2","type":"associated","useAlegraCertificate":true,"governmentStatus":{},"notificationByEmail":{"enabled":false},"webhooks":{},"organizationType":1,"identificationType":"31","regimeCode":"R-99-PN","email":"email@email.com","phone":"1234567890","address":{"address":"Cra.
+        S.A.S","identification":"111111111","dv":"2","type":"associated","useAlegraCertificate":true,"governmentStatus":{},"notificationByEmail":{"enabled":false},"webhooks":{},"organizationType":1,"identificationType":"31","regimeCode":"R-99-PN","taxCode": {"id": "ZZ"},"email":"email@email.com","phone":"1234567890","address":{"address":"Cra.
         13 #12-12 Edificio A & A","city":"11001","department":"11","country":"CO"}}}'
     headers:
       Apigw-Requestid:

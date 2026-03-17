@@ -3,11 +3,12 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr
 
 from alegra.models.address import Address
-from alegra.models.phone_number import PhoneNumber
+from alegra.models.company import TaxCode
 
 
 class Customer(BaseModel):
     name: str
+    taxCode: TaxCode
     organizationType: int
     identificationType: str
     identificationNumber: Optional[str]
