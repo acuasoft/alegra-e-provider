@@ -28,6 +28,7 @@ class TestModelSerialization:
             useAlegraCertificate=True,
             organizationType=1,
             identificationType="31",
+            taxCode={"id": "01"},
             email="test@example.com",
             address=Address(
                 address="Test St",
@@ -62,6 +63,7 @@ class TestModelSerialization:
             useAlegraCertificate=True,
             organizationType=1,
             identificationType="31",
+            taxCode={"id": "01"},
             email="test@example.com",
             address=Address(
                 address="Test St",
@@ -90,6 +92,7 @@ class TestModelSerialization:
             useAlegraCertificate=True,
             organizationType=1,
             identificationType="31",
+            taxCode={"id": "01"},
             email="test@example.com",
             address=Address(
                 address="Test St",
