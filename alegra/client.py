@@ -10,6 +10,20 @@ from alegra.models.payroll import Payroll
 from alegra.models.test_set import TestSet
 from alegra.resources.factory import ResourceFactory
 
+FILE_TYPES = ["XML", "JSON", "GOVERNMENT_RESPONSE", "ATTACHED_DOCUMENT", "PDF", "ZIP"]
+
+
+def _file_subactions():
+    return {
+        f"perform__file_{file_type.lower()}": {
+            "model": FileResponse,
+            "endpoint_suffix": f"files/{file_type}",
+            "response_model": FileResponse,
+            "response_key": "file",
+        }
+        for file_type in FILE_TYPES
+    }
+
 
 class ApiClient:
     def __init__(self, config: ApiConfig, async_mode=False):
@@ -132,12 +146,7 @@ class ApiClient:
                     "response_model": InvoiceResponse,
                     "response_key": "invoice",
                 },
-                "perform__file_xml": {
-                    "model": FileResponse,
-                    "endpoint_suffix": "files/XML",
-                    "response_model": FileResponse,
-                    "response_key": "file",
-                },
+                **_file_subactions(),
                 "list": {
                     "model": InvoiceResponse,
                     "response_model": InvoiceResponse,
@@ -160,12 +169,7 @@ class ApiClient:
                     "response_model": NoteResponse,
                     "response_key": "creditNote",
                 },
-                "perform__file_xml": {
-                    "model": FileResponse,
-                    "endpoint_suffix": "files/XML",
-                    "response_model": FileResponse,
-                    "response_key": "file",
-                },
+                **_file_subactions(),
                 "list": {
                     "model": NoteResponse,
                     "response_model": NoteResponse,
@@ -188,12 +192,7 @@ class ApiClient:
                     "response_model": NoteResponse,
                     "response_key": "debitNote",
                 },
-                "perform__file_xml": {
-                    "model": FileResponse,
-                    "endpoint_suffix": "files/XML",
-                    "response_model": FileResponse,
-                    "response_key": "file",
-                },
+                **_file_subactions(),
                 "list": {
                     "model": NoteResponse,
                     "response_model": NoteResponse,
