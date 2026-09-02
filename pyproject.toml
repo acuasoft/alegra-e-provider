@@ -19,9 +19,6 @@ dependencies = [
 [tool.setuptools.packages.find]
 include = ["alegra", "alegra.*"]
 
-[tool.setuptools.dynamic]
-version = {attr = "alegra.__version__"}
-
 [tool.versioneer]
 VCS = "git"
 style = "pep440"
