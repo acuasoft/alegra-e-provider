@@ -2,6 +2,7 @@ import httpx
 import requests
 
 from alegra.config import ApiConfig
+from alegra.exceptions import AlegraHttpError
 from alegra.models.company import Company
 from alegra.models.dian import DianResource
 from alegra.models.invoice import FileResponse, Invoice, InvoiceResponse
@@ -32,13 +33,29 @@ class ApiClient:
         self.async_mode = async_mode
         self._initialize_resources()
 
+    @staticmethod
+    def _handle_response(response, url):
+        if response.status_code >= 400:
+            raise AlegraHttpError(
+                f"Request to {url} failed with status {response.status_code}",
+                status_code=response.status_code,
+                url=url,
+                response=response.text,
+            )
+        if not response.content:
+            return {}
+        return response.json()
+
     async def _async_request(self, method, endpoint, **kwargs):
         url = f"{self.base_url}/{endpoint}"
         async with httpx.AsyncClient(
             headers={"Authorization": f"Bearer {self.config.api_key}"}, timeout=30.0
         ) as client:
-            response = await client.request(method, url, **kwargs)
-            return response.json()
+            try:
+                response = await client.request(method, url, **kwargs)
+            except httpx.RequestError as e:
+                raise AlegraHttpError(f"Network error requesting {url}: {e}", url=url) from e
+            return self._handle_response(response, url)
 
     def _sync_request(self, method, endpoint, **kwargs):
         url = f"{self.base_url}/{endpoint}"
@@ -49,8 +66,11 @@ class ApiClient:
                     "Accept": "application/json",
                 }
             )
-            response = session.request(method, url, **kwargs)
-            return response.json()
+            try:
+                response = session.request(method, url, **kwargs)
+            except requests.RequestException as e:
+                raise AlegraHttpError(f"Network error requesting {url}: {e}", url=url) from e
+            return self._handle_response(response, url)
 
     def _request(self, method, endpoint, **kwargs):
         if self.async_mode:
