@@ -157,12 +157,20 @@ print(test_set.id, test_set.type)
 
 ## Error Handling
 
-The client raises exceptions for HTTP errors, which can be caught and handled appropriately.
+Every error the client raises intentionally is an `AlegraApiError`:
+
+- **`AlegraConfigurationError`**: invalid `ApiConfig` (bad `environment`, blank `api_key`)
+- **`AlegraHttpError`**: an HTTP error response, or a network/transport failure. Carries `.status_code` (`None` for network errors), `.url`, and `.response`
+- **`AlegraResponseParseError`**: a "successful" response didn't have the expected shape
 
 ```python
+from alegra import AlegraApiError, AlegraHttpError
+
 try:
     new_company = client.companies.create(company_data)
-except requests.exceptions.RequestException as e:
+except AlegraHttpError as e:
+    print(f"Request to {e.url} failed with status {e.status_code}")
+except AlegraApiError as e:
     print(f"An error occurred: {e}")
 ```
 

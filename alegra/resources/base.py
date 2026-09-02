@@ -1,6 +1,8 @@
 from typing import Callable, Dict
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+
+from alegra.exceptions import AlegraResponseParseError
 
 
 class ApiResource:
@@ -23,16 +25,22 @@ class ApiResource:
         response_key = self.actions_config[action].get("response_key")
         if response_key:
             if response_key not in response:
-                if response.get("message"):
-                    raise ValueError(response.get("message"))
-                if response.get("errors"):
-                    raise ValueError(response.get("errors"))
-                raise ValueError(f"Response key '{response_key}' not found in response")
-            response_data = response.get(response_key, response)
+                detail = response.get("message") or response.get("errors") or response
+                raise AlegraResponseParseError(
+                    f"Expected key '{response_key}' in response for action '{action}' "
+                    f"on '{self.endpoint}': {detail}"
+                )
+            response_data = response[response_key]
         else:
             response_data = response
         model = self.actions_config[action]["response_model"]
-        return model.model_validate(response_data)
+        try:
+            return model.model_validate(response_data)
+        except ValidationError as e:
+            raise AlegraResponseParseError(
+                f"Response for action '{action}' on '{self.endpoint}' didn't match "
+                f"{model.__name__}: {e}"
+            ) from e
 
     def _prepare_data(self, data: BaseModel):
         if data is None:
@@ -102,8 +110,8 @@ class ApiResource:
                 f"The action 'delete' is not allowed for {self.endpoint}"
             )
         endpoint = f"{self.endpoint}/{resource_id}"
-        response = self.request_method("DELETE", endpoint)
-        return response.status_code == 204
+        self.request_method("DELETE", endpoint)
+        return True
 
     def list(self, params=None):
         action = "list"
