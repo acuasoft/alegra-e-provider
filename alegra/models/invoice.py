@@ -47,6 +47,7 @@ class Payment(BaseModel):
 class DiscountOrCharge(BaseModel):
     isCharge: bool
     reason: str
+    reasonCode: str
     percentageAmount: float
     amount: float
     baseAmount: float
