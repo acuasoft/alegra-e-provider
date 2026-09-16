@@ -3,7 +3,7 @@ from vcr.unittest import VCRTestCase
 
 from alegra.client import ApiClient
 from alegra.config import ApiConfig
-from alegra.models.invoice import Invoice
+from alegra.models.invoice import Invoice, InvoiceResponse
 
 
 class TestInvoiceResource(VCRTestCase):
@@ -95,3 +95,58 @@ class TestInvoiceResource(VCRTestCase):
         )
         invoice = self.client.invoices.create(invoice_data)
         self.assertIsNotNone(invoice.id)
+
+
+def _waiting_response_payload():
+    return {
+        "id": "01JMZ1SMYJW51VAC1G2W38PJVR",
+        "companyIdentification": "1144145424",
+        "customerIdentification": "222222222222",
+        "type": "STANDARD",
+        "date": "2025-02-25T12:17:11-05:00",
+        "prefix": "SETP",
+        "number": 990015000,
+        "fullNumber": "SETP990015000",
+        "status": "WAITING_RESPONSE",
+    }
+
+
+class TestInvoiceResponseWaitingOnDian:
+    """While status is WAITING_RESPONSE, the DIAN hasn't ruled yet, so
+    legalStatus and the fields derived from that ruling are absent."""
+
+    def test_parses_without_the_dian_dependent_fields(self):
+        invoice = InvoiceResponse.model_validate(_waiting_response_payload())
+
+        assert invoice.id == "01JMZ1SMYJW51VAC1G2W38PJVR"
+        assert invoice.status == "WAITING_RESPONSE"
+        assert invoice.legalStatus is None
+        assert invoice.cufe is None
+        assert invoice.governmentResponse is None
+        assert invoice.xmlFileName is None
+        assert invoice.zipFileName is None
+        assert invoice.qrCodeContent is None
+
+    def test_still_parses_a_fully_resolved_response(self):
+        payload = _waiting_response_payload()
+        payload.update(
+            {
+                "status": "SENT",
+                "legalStatus": "REJECTED",
+                "cufe": "d31239c3e9629734229b5c2e7fc212af8aa585600bbf2927a8066419e624d0",
+                "governmentResponse": {
+                    "code": "99",
+                    "message": "Validación contiene errores en campos mandatorios.",
+                    "errorMessages": [],
+                },
+                "xmlFileName": "fv11441454240852500000023.xml",
+                "zipFileName": "z11441454240852500000024.zip",
+                "qrCodeContent": "NumFac: SETP990015000",
+            }
+        )
+
+        invoice = InvoiceResponse.model_validate(payload)
+
+        assert invoice.legalStatus == "REJECTED"
+        assert invoice.cufe == payload["cufe"]
+        assert invoice.governmentResponse.code == "99"
