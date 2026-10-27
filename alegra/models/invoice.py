@@ -47,6 +47,7 @@ class Payment(BaseModel):
 class DiscountOrCharge(BaseModel):
     isCharge: bool
     reason: str
+    reasonCode: str
     percentageAmount: float
     amount: float
     baseAmount: float
@@ -87,21 +88,29 @@ class GovernmentResponse(BaseModel):
 
 
 class InvoiceResponse(BaseModel):
+    """Response for a created/fetched invoice.
+
+    While status is "WAITING_RESPONSE", the DIAN hasn't ruled on the
+    document yet and legalStatus and the fields derived from that ruling
+    (cufe, governmentResponse, xmlFileName, zipFileName, qrCodeContent)
+    are not yet available.
+    """
+
     id: str
     companyIdentification: str
     customerIdentification: str
     type: str
-    cufe: str
+    cufe: str | None = None
     date: datetime
     prefix: str | None = None
     number: int
     fullNumber: str
     status: str
-    legalStatus: str
-    governmentResponse: GovernmentResponse
-    xmlFileName: str
-    zipFileName: str
-    qrCodeContent: str
+    legalStatus: str | None = None
+    governmentResponse: GovernmentResponse | None = None
+    xmlFileName: str | None = None
+    zipFileName: str | None = None
+    qrCodeContent: str | None = None
 
 
 class FileResponse(BaseModel):
