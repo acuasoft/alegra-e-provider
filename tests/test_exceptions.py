@@ -112,6 +112,18 @@ class TestParseResponse:
         with pytest.raises(AlegraResponseParseError):
             self.resource._parse_response({"widget": {"id": 123, "extra": True}}, "get")
 
+    def test_list_accepts_the_model_key(self):
+        resource = ApiResource(
+            client=None,
+            endpoint="widgets",
+            request_method=lambda method, endpoint, **kwargs: {
+                "widgets": [{"id": "a"}]
+            },
+            actions_config={"list": {"response_key": "widgets", "model": Widget}},
+        )
+
+        assert resource.list() == [Widget(id="a")]
+
 
 class TestDelete:
     def setup_method(self):

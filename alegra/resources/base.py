@@ -1,8 +1,14 @@
-from typing import Callable, Dict
+from functools import lru_cache
+from typing import Callable, Dict, List
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from alegra.exceptions import AlegraResponseParseError
+
+
+@lru_cache(maxsize=None)
+def _adapter(tp):
+    return TypeAdapter(tp)
 
 
 class ApiResource:
@@ -28,18 +34,20 @@ class ApiResource:
                 detail = response.get("message") or response.get("errors") or response
                 raise AlegraResponseParseError(
                     f"Expected key '{response_key}' in response for action '{action}' "
-                    f"on '{self.endpoint}': {detail}"
+                    f"on '{self.endpoint}': {detail}",
+                    response=response,
                 )
             response_data = response[response_key]
         else:
             response_data = response
         model = self.actions_config[action]["response_model"]
         try:
-            return model.model_validate(response_data)
+            return _adapter(model).validate_python(response_data)
         except ValidationError as e:
             raise AlegraResponseParseError(
                 f"Response for action '{action}' on '{self.endpoint}' didn't match "
-                f"{model.__name__}: {e}"
+                f"the expected shape: {e}",
+                response=response,
             ) from e
 
     def _prepare_data(self, data: BaseModel):
@@ -120,12 +128,17 @@ class ApiResource:
                 f"The action 'list' is not allowed for {self.endpoint}"
             )
         response = self.request_method("GET", self.endpoint, params=params)
-        return [
-            self.actions_config[action]["model"].model_validate(item)
-            for item in response.get(
-                self.actions_config[action].get("response_key", [])
-            )
-        ]
+        config = self.actions_config[action]
+        model = config.get("response_model") or config["model"]
+        items = response.get(config.get("response_key", []))
+        try:
+            return _adapter(List[model]).validate_python(items)
+        except ValidationError as e:
+            raise AlegraResponseParseError(
+                f"Response for action '{action}' on '{self.endpoint}' didn't match "
+                f"the expected shape: {e}",
+                response=response,
+            ) from e
 
     def perform_subaction(
         self, resource_id: str, subaction: str, data: BaseModel = None

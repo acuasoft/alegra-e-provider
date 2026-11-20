@@ -5,7 +5,7 @@ from alegra.config import ApiConfig
 from alegra.exceptions import AlegraHttpError
 from alegra.models.company import Company
 from alegra.models.dian import DianResource
-from alegra.models.invoice import FileResponse, Invoice, InvoiceResponse
+from alegra.models.invoice import AnyInvoiceResponse, FileResponse, Invoice
 from alegra.models.note import CreditNote, DebitNote, NoteResponse
 from alegra.models.payroll import Payroll
 from alegra.models.test_set import TestSet
@@ -158,18 +158,18 @@ class ApiClient:
             {
                 "create": {
                     "model": Invoice,
-                    "response_model": InvoiceResponse,
+                    "response_model": AnyInvoiceResponse,
                     "response_key": "invoice",
                 },
                 "get": {
                     "model": Invoice,
-                    "response_model": InvoiceResponse,
+                    "response_model": AnyInvoiceResponse,
                     "response_key": "invoice",
                 },
                 **_file_subactions(),
                 "list": {
-                    "model": InvoiceResponse,
-                    "response_model": InvoiceResponse,
+                    "model": AnyInvoiceResponse,
+                    "response_model": AnyInvoiceResponse,
                     "response_key": "invoices",
                 },
             },

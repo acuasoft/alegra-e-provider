@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Annotated, List, Literal, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from alegra.models.customer import Customer
 
@@ -86,22 +86,70 @@ class GovernmentResponse(BaseModel):
     errorMessages: List[str]
 
 
+class ApiError(BaseModel):
+    code: str | None = None
+    message: str
+
+
 class InvoiceResponse(BaseModel):
+    """Fields common to every invoice response.
+
+    The variant for a given status is chosen by `AnyInvoiceResponse`; validating
+    through this base class returns the base, not a variant.
+    """
+
     id: str
     companyIdentification: str
     customerIdentification: str
     type: str
-    cufe: str
     date: datetime
     prefix: str | None = None
     number: int
     fullNumber: str
-    status: str
-    legalStatus: str
-    governmentResponse: GovernmentResponse
+    status: Literal["REGISTERED", "WAITING_RESPONSE", "SENT", "FAILED"]
+    cufe: str | None = None
+    qrCodeContent: str | None = None
+    xmlFileName: str | None = None
+    zipFileName: str | None = None
+    legalStatus: str | None = None
+    governmentResponse: GovernmentResponse | None = None
+    errors: list[ApiError] | None = None
+
+
+class RegisteredInvoiceResponse(InvoiceResponse):
+    status: Literal["REGISTERED"]
+
+
+class _IssuedInvoiceResponse(InvoiceResponse):
+    cufe: str
+    qrCodeContent: str
     xmlFileName: str
     zipFileName: str
-    qrCodeContent: str
+
+
+class WaitingInvoiceResponse(_IssuedInvoiceResponse):
+    status: Literal["WAITING_RESPONSE"]
+
+
+class SentInvoiceResponse(_IssuedInvoiceResponse):
+    status: Literal["SENT"]
+    legalStatus: str
+    governmentResponse: GovernmentResponse
+
+
+class FailedInvoiceResponse(InvoiceResponse):
+    status: Literal["FAILED"]
+
+
+AnyInvoiceResponse = Annotated[
+    Union[
+        RegisteredInvoiceResponse,
+        WaitingInvoiceResponse,
+        SentInvoiceResponse,
+        FailedInvoiceResponse,
+    ],
+    Field(discriminator="status"),
+]
 
 
 class FileResponse(BaseModel):
