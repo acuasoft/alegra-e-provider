@@ -186,7 +186,7 @@ Every error the client raises intentionally is an `AlegraApiError`:
 
 - **`AlegraConfigurationError`**: invalid `ApiConfig` (bad `environment`, blank `api_key`)
 - **`AlegraHttpError`**: an HTTP error response, or a network/transport failure. Carries `.status_code` (`None` for network errors), `.url`, and `.response`
-- **`AlegraResponseParseError`**: a "successful" response didn't have the expected shape. Carries `.response`, the full decoded body that failed to parse
+- **`AlegraResponseParseError`**: a "successful" response didn't have the expected shape. The message names the status, id and failing fields without including response data; `.response` holds the full decoded body. `list` raises it too
 
 ```python
 from alegra import AlegraApiError, AlegraHttpError

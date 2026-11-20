@@ -1,5 +1,6 @@
+import re
 from functools import lru_cache
-from typing import Callable, Dict, List
+from typing import Any, Callable, Dict, List
 
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
@@ -9,6 +10,84 @@ from alegra.exceptions import AlegraResponseParseError
 @lru_cache(maxsize=None)
 def _adapter(tp):
     return TypeAdapter(tp)
+
+
+_MAX_ERRORS = 5
+_MAX_KEYS = 10
+_MAX_KEY_LENGTH = 64
+_MAX_MESSAGE_LENGTH = 200
+_STATUS_PATTERN = re.compile(r"[A-Z_]{1,32}")
+_ID_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")
+
+
+def _more(total: int, shown: int):
+    return f" (+{total - shown} more)" if total > shown else ""
+
+
+def _describe_error(error: dict):
+    location = ".".join(str(part) for part in error["loc"])
+    if error["type"] == "union_tag_invalid":
+        ctx = error["ctx"]
+        discriminator = str(ctx["discriminator"]).strip("'\"")
+        message = f"{discriminator}: not one of {ctx['expected_tags']}"
+        return f"{location}.{message}" if location else message
+    message = error["msg"]
+    if error["type"] == "value_error":
+        message = message.split(": ", 1)[0]
+    message = message[:_MAX_MESSAGE_LENGTH]
+    return f"{location}: {message}" if location else message
+
+
+def _describe_keys(keys: List[str], shown: List[str]):
+    if not keys:
+        return "no keys"
+    return f"keys: {', '.join(shown)}{_more(len(keys), len(shown))}"
+
+
+def _describe_subject(data: Any):
+    if not isinstance(data, dict):
+        return ""
+    status, resource_id = data.get("status"), data.get("id")
+    parts = []
+    if isinstance(status, str) and _STATUS_PATTERN.fullmatch(status):
+        parts.append(f"status={status}")
+    if isinstance(resource_id, str) and _ID_PATTERN.fullmatch(resource_id):
+        parts.append(f"id={resource_id}")
+    return f" ({', '.join(parts)})" if parts else ""
+
+
+def _model_mismatch_error(
+    action: str,
+    endpoint: str,
+    error: ValidationError,
+    data: Any,
+    response: Any,
+):
+    """Builds the parse error for data that failed model validation.
+
+    The message names the failing fields and never includes values from the
+    response; pydantic's own text is not used because it echoes the input.
+
+    Args:
+        action: The resource action being parsed.
+        endpoint: The resource endpoint.
+        error: The validation error raised for the data.
+        data: The data that was validated.
+        response: The full decoded response body, kept on the exception.
+
+    Returns:
+        The exception to raise.
+    """
+    errors = error.errors(include_url=False, include_input=False)
+    shown = errors[:_MAX_ERRORS]
+    details = "; ".join(_describe_error(e) for e in shown) + _more(
+        len(errors), len(shown)
+    )
+    return AlegraResponseParseError(
+        f"Response for '{action}' on '{endpoint}' didn't match the expected shape"
+        f"{_describe_subject(data)}: {details}",
+        response=response,
+    )
 
 
 class ApiResource:
@@ -27,28 +106,38 @@ class ApiResource:
     def _is_action_allowed(self, action: str):
         return action in self.actions_config
 
-    def _parse_response(self, response, action: str):
+    def _extract(self, response, action: str):
         response_key = self.actions_config[action].get("response_key")
-        if response_key:
-            if response_key not in response:
-                detail = response.get("message") or response.get("errors") or response
-                raise AlegraResponseParseError(
-                    f"Expected key '{response_key}' in response for action '{action}' "
-                    f"on '{self.endpoint}': {detail}",
-                    response=response,
-                )
-            response_data = response[response_key]
-        else:
-            response_data = response
-        model = self.actions_config[action]["response_model"]
-        try:
-            return _adapter(model).validate_python(response_data)
-        except ValidationError as e:
+        if not response_key:
+            return response
+        if not isinstance(response, dict):
             raise AlegraResponseParseError(
-                f"Response for action '{action}' on '{self.endpoint}' didn't match "
-                f"the expected shape: {e}",
+                f"Expected a JSON object in response for action '{action}' "
+                f"on '{self.endpoint}', got {type(response).__name__}",
                 response=response,
-            ) from e
+            )
+        if response_key not in response:
+            keys = sorted(str(key) for key in response)
+            shown = [key[:_MAX_KEY_LENGTH] for key in keys[:_MAX_KEYS]]
+            raise AlegraResponseParseError(
+                f"Expected key '{response_key}' in response for action '{action}' "
+                f"on '{self.endpoint}'; got {_describe_keys(keys, shown)}",
+                response=response,
+            )
+        return response[response_key]
+
+    def _validate(self, model, data, action: str, response):
+        try:
+            return _adapter(model).validate_python(data)
+        except ValidationError as e:
+            raise _model_mismatch_error(
+                action, self.endpoint, e, data, response
+            ) from None
+
+    def _parse_response(self, response, action: str):
+        data = self._extract(response, action)
+        model = self.actions_config[action]["response_model"]
+        return self._validate(model, data, action, response)
 
     def _prepare_data(self, data: BaseModel):
         if data is None:
@@ -130,15 +219,8 @@ class ApiResource:
         response = self.request_method("GET", self.endpoint, params=params)
         config = self.actions_config[action]
         model = config.get("response_model") or config["model"]
-        items = response.get(config.get("response_key", []))
-        try:
-            return _adapter(List[model]).validate_python(items)
-        except ValidationError as e:
-            raise AlegraResponseParseError(
-                f"Response for action '{action}' on '{self.endpoint}' didn't match "
-                f"the expected shape: {e}",
-                response=response,
-            ) from e
+        items = self._extract(response, action)
+        return self._validate(List[model], items, action, response)
 
     def perform_subaction(
         self, resource_id: str, subaction: str, data: BaseModel = None
