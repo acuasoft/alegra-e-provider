@@ -11,12 +11,14 @@ from alegra.config import ApiConfig
 from alegra.exceptions import AlegraResponseParseError
 from alegra.models.invoice import (
     AnyInvoiceResponse,
+    DiscountOrCharge,
     FailedInvoiceResponse,
     InvoiceResponse,
     RegisteredInvoiceResponse,
     SentInvoiceResponse,
     WaitingInvoiceResponse,
 )
+from alegra.resources.base import ApiResource
 from tests.invoice_payloads import (
     CUFE,
     ISSUED_FIELDS,
@@ -258,3 +260,35 @@ class TestInvoicesThroughClient:
             client.invoices.get("any-id")
 
         assert exc_info.value.response == response
+
+
+class TestDiscountOrCharge:
+    FIELDS = {
+        "isCharge": True,
+        "reason": "Redondeo",
+        "reasonCode": "02",
+        "percentageAmount": 0.1,
+        "amount": 100.0,
+        "baseAmount": 1000.0,
+    }
+
+    def test_reason_code_is_serialized(self):
+        discount = DiscountOrCharge(**self.FIELDS)
+
+        assert discount.model_dump()["reasonCode"] == "02"
+
+    def test_reason_code_is_required(self):
+        fields = {k: v for k, v in self.FIELDS.items() if k != "reasonCode"}
+
+        with pytest.raises(ValidationError) as exc_info:
+            DiscountOrCharge(**fields)
+
+        assert exc_info.value.errors()[0]["loc"] == ("reasonCode",)
+
+    def test_reason_code_reaches_the_invoice_payload(self):
+        discount = DiscountOrCharge(**self.FIELDS)
+        invoice = build_invoice().model_copy(update={"discountsAndCharges": [discount]})
+
+        payload = ApiResource(None, "invoices", None, {})._prepare_data(invoice)
+
+        assert payload["discountsAndCharges"][0]["reasonCode"] == "02"
