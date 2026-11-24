@@ -12,6 +12,7 @@ from alegra.models.test_set import TestSet
 from alegra.resources.factory import ResourceFactory
 
 FILE_TYPES = ["XML", "JSON", "GOVERNMENT_RESPONSE", "ATTACHED_DOCUMENT", "PDF", "ZIP"]
+REQUEST_TIMEOUT = (5, 30)  # (connect, read) seconds
 
 
 def _file_subactions():
@@ -67,7 +68,9 @@ class ApiClient:
                 }
             )
             try:
-                response = session.request(method, url, **kwargs)
+                response = session.request(
+                    method, url, timeout=REQUEST_TIMEOUT, **kwargs
+                )
             except requests.RequestException as e:
                 raise AlegraHttpError(f"Network error requesting {url}: {e}", url=url) from e
             return self._handle_response(response, url)

@@ -61,6 +61,29 @@ class TestSyncRequestErrorHandling:
 
         assert exc_info.value.status_code is None
 
+    def test_request_sets_a_timeout(self):
+        fake_response = requests.Response()
+        fake_response.status_code = 200
+        fake_response._content = b"{}"
+
+        with patch.object(
+            requests.Session, "request", return_value=fake_response
+        ) as request:
+            self.client._request("GET", "invoices/some-id")
+
+        assert request.call_args.kwargs["timeout"] == (5, 30)
+
+    def test_timeout_raises_http_error_with_no_status_code(self):
+        with patch.object(
+            requests.Session,
+            "request",
+            side_effect=requests.Timeout("timed out"),
+        ):
+            with pytest.raises(AlegraHttpError) as exc_info:
+                self.client._request("GET", "invoices/some-id")
+
+        assert exc_info.value.status_code is None
+
 
 class TestAsyncRequestErrorHandling:
     def setup_method(self):
