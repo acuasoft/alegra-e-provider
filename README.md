@@ -155,13 +155,38 @@ test_set = client.test_sets.get("test_set_id")
 print(test_set.id, test_set.type)
 ```
 
+## Invoice Response Statuses
+
+`client.invoices.create(...)`, `client.invoices.get(...)` and `client.invoices.list(...)` return the variant of `InvoiceResponse` for the invoice's `status`. Each variant requires exactly the fields the API sends for that status; fields a status does not carry are `None`.
+
+| `status` | Class | Present besides the fixed fields |
+| --- | --- | --- |
+| `REGISTERED` | `RegisteredInvoiceResponse` | nothing |
+| `WAITING_RESPONSE` | `WaitingInvoiceResponse` | `cufe`, `qrCodeContent`, `xmlFileName`, `zipFileName` |
+| `SENT` | `SentInvoiceResponse` | the four above, plus `legalStatus` and `governmentResponse` |
+| `FAILED` | `FailedInvoiceResponse` | `errors` when the API sends them, plus whatever was generated before the failure |
+
+`SENT` only means the DIAN received the document; whether it was accepted is `legalStatus`. While the status is `REGISTERED` or `WAITING_RESPONSE`, call `client.invoices.get(invoice.id)` again until the DIAN answers.
+
+The variant is chosen by `AnyInvoiceResponse`, a discriminated union on `status`. To parse a payload outside the client, validate it through a `TypeAdapter`:
+
+```python
+from pydantic import TypeAdapter
+
+from alegra.models.invoice import AnyInvoiceResponse
+
+invoice = TypeAdapter(AnyInvoiceResponse).validate_python(payload)
+```
+
+An unknown `status` fails validation. Call `get` on a sync client: with `async_mode=True` only `create` is awaited, and `get`, `update`, `list` and subactions fail with `AlegraResponseParseError`.
+
 ## Error Handling
 
 Every error the client raises intentionally is an `AlegraApiError`:
 
 - **`AlegraConfigurationError`**: invalid `ApiConfig` (bad `environment`, blank `api_key`)
 - **`AlegraHttpError`**: an HTTP error response, or a network/transport failure. Carries `.status_code` (`None` for network errors), `.url`, and `.response`
-- **`AlegraResponseParseError`**: a "successful" response didn't have the expected shape
+- **`AlegraResponseParseError`**: a "successful" response didn't have the expected shape. The message names the status, id and failing fields without including response data; `.response` holds the full decoded body. `list` raises it too
 
 ```python
 from alegra import AlegraApiError, AlegraHttpError

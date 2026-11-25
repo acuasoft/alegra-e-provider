@@ -22,4 +22,11 @@ class AlegraHttpError(AlegraApiError):
 class AlegraResponseParseError(AlegraApiError):
     """Raised when a successful response doesn't match what was expected:
     the configured response key is missing, or the data fails model validation.
+
+    The message describes what failed without including response values;
+    `response` holds the full decoded body.
     """
+
+    def __init__(self, message, response=None):
+        super().__init__(message)
+        self.response = response

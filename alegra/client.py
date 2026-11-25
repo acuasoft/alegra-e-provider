@@ -5,13 +5,14 @@ from alegra.config import ApiConfig
 from alegra.exceptions import AlegraHttpError
 from alegra.models.company import Company
 from alegra.models.dian import DianResource
-from alegra.models.invoice import FileResponse, Invoice, InvoiceResponse
+from alegra.models.invoice import AnyInvoiceResponse, FileResponse, Invoice
 from alegra.models.note import CreditNote, DebitNote, NoteResponse
 from alegra.models.payroll import Payroll
 from alegra.models.test_set import TestSet
 from alegra.resources.factory import ResourceFactory
 
 FILE_TYPES = ["XML", "JSON", "GOVERNMENT_RESPONSE", "ATTACHED_DOCUMENT", "PDF", "ZIP"]
+REQUEST_TIMEOUT = (5, 30)  # (connect, read) seconds
 
 
 def _file_subactions():
@@ -67,7 +68,9 @@ class ApiClient:
                 }
             )
             try:
-                response = session.request(method, url, **kwargs)
+                response = session.request(
+                    method, url, timeout=REQUEST_TIMEOUT, **kwargs
+                )
             except requests.RequestException as e:
                 raise AlegraHttpError(f"Network error requesting {url}: {e}", url=url) from e
             return self._handle_response(response, url)
@@ -158,18 +161,18 @@ class ApiClient:
             {
                 "create": {
                     "model": Invoice,
-                    "response_model": InvoiceResponse,
+                    "response_model": AnyInvoiceResponse,
                     "response_key": "invoice",
                 },
                 "get": {
                     "model": Invoice,
-                    "response_model": InvoiceResponse,
+                    "response_model": AnyInvoiceResponse,
                     "response_key": "invoice",
                 },
                 **_file_subactions(),
                 "list": {
-                    "model": InvoiceResponse,
-                    "response_model": InvoiceResponse,
+                    "model": AnyInvoiceResponse,
+                    "response_model": AnyInvoiceResponse,
                     "response_key": "invoices",
                 },
             },

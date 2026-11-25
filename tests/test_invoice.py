@@ -1,9 +1,31 @@
+import asyncio
+import json
+
+import pytest
 import vcr
+from pydantic import TypeAdapter, ValidationError
 from vcr.unittest import VCRTestCase
 
 from alegra.client import ApiClient
 from alegra.config import ApiConfig
-from alegra.models.invoice import Invoice
+from alegra.exceptions import AlegraResponseParseError
+from alegra.models.invoice import (
+    AnyInvoiceResponse,
+    DiscountOrCharge,
+    FailedInvoiceResponse,
+    InvoiceResponse,
+    RegisteredInvoiceResponse,
+    SentInvoiceResponse,
+    WaitingInvoiceResponse,
+)
+from alegra.resources.base import ApiResource
+from tests.invoice_payloads import (
+    CUFE,
+    ISSUED_FIELDS,
+    VERDICT_FIELDS,
+    _invoice_payload,
+    build_invoice,
+)
 
 
 class TestInvoiceResource(VCRTestCase):
@@ -16,82 +38,257 @@ class TestInvoiceResource(VCRTestCase):
         filter_headers=["authorization"],
     )
     def test_create_invoice(self):
-        invoice_data = Invoice(
-            **{
-                "documentType": "01",
-                "resolution": {
-                    "resolutionNumber": "18760000001",
-                    "prefix": "SETP",
-                    "minNumber": 990000000,
-                    "maxNumber": 995000000,
-                    "startDate": "2019-01-19",
-                    "endDate": "2030-01-19",
-                    "technicalKey": "fc8eac422eba16e22ffd8c6f94b3f40a6e38162c",
-                },
-                "company": {
-                    "id": "01HTJ3D9NZA79Z6BRNHB19C6Z0",
-                },
-                "customer": {
-                    "address": {
-                        "address": "Cra. 13 #12-12 Edificio A & A",
-                        "city": "11001",
-                        "department": "11",
-                        "country": "CO",
+        invoice = self.client.invoices.create(build_invoice())
+        self.assertIsNotNone(invoice.id)
+        self.assertIsInstance(invoice, SentInvoiceResponse)
+
+
+def _parse(payload):
+    return TypeAdapter(AnyInvoiceResponse).validate_python(payload)
+
+
+class TestInvoiceResponseByStatus:
+    def test_registered_carries_only_the_fixed_fields(self):
+        invoice = _parse(_invoice_payload("REGISTERED"))
+
+        assert isinstance(invoice, RegisteredInvoiceResponse)
+        assert invoice.id == "01JMZ1SMYJW51VAC1G2W38PJVR"
+        assert invoice.cufe is None
+        assert invoice.legalStatus is None
+
+    def test_waiting_response_carries_cufe_and_files_but_no_verdict(self):
+        invoice = _parse(_invoice_payload("WAITING_RESPONSE", **ISSUED_FIELDS))
+
+        assert isinstance(invoice, WaitingInvoiceResponse)
+        assert invoice.cufe == CUFE
+        assert invoice.zipFileName == ISSUED_FIELDS["zipFileName"]
+        assert invoice.legalStatus is None
+        assert invoice.governmentResponse is None
+
+    def test_sent_carries_the_files_and_the_verdict(self):
+        invoice = _parse(_invoice_payload("SENT", **ISSUED_FIELDS, **VERDICT_FIELDS))
+
+        assert isinstance(invoice, SentInvoiceResponse)
+        assert invoice.legalStatus == "ACCEPTED"
+        assert invoice.governmentResponse.code == "00"
+        assert invoice.cufe == CUFE
+
+    def test_sent_may_have_been_rejected(self):
+        verdict = {
+            "legalStatus": "REJECTED",
+            "governmentResponse": {
+                "code": "99",
+                "message": "Validación contiene errores en campos mandatorios.",
+                "errorMessages": ["Regla: FAU02, Rechazo: ..."],
+            },
+        }
+
+        invoice = _parse(_invoice_payload("SENT", **ISSUED_FIELDS, **verdict))
+
+        assert invoice.legalStatus == "REJECTED"
+        assert invoice.governmentResponse.errorMessages == [
+            "Regla: FAU02, Rechazo: ..."
+        ]
+
+    def test_failed_carries_the_errors(self):
+        invoice = _parse(
+            _invoice_payload(
+                "FAILED",
+                errors=[
+                    {
+                        "code": "EPR504",
+                        "message": "Resend Error. Signature date is different from shipping date.",
                     },
-                    "name": "Customer Name",
-                    "taxCode": {"id": "01"},
-                    "organizationType": 2,
-                    "identificationType": "13",
-                    "identificationNumber": "222222222222",
-                    "dv": "2",
-                    "email": "email@email.com",
-                    "phone": "3223334455",
-                },
-                "totalAmounts": {
-                    "grossTotal": 10000,
-                    "taxableTotal": 10000,
-                    "taxTotal": 1900,
-                    "discountTotal": 0,
-                    "chargeTotal": 0,
-                    "advanceTotal": 0,
-                    "payableTotal": 11900,
-                    "currencyCode": "COP",
-                },
-                "number": 990015000,
-                "note": "Nota relativa al documento",
-                "items": [
-                    {
-                        "code": "BM3",
-                        "standardCode": {"identificationId": "11001", "id": "001"},
-                        "description": "Botella de M3",
-                        "price": 10000,
-                        "discount": 0,
-                        "discountAmount": 0,
-                        "quantity": 1,
-                        "unitCode": "94",
-                        "subtotal": 10000,
-                        "taxAmount": 1900,
-                        "total": 11900,
-                        "taxes": [
-                            {
-                                "taxCode": "01",
-                                "taxAmount": 1900,
-                                "taxPercentage": "19.00",
-                                "taxableAmount": 10000,
-                                "taxBaseUnitMeasure": 1,
-                                "taxPerUnitAmount": 1,
-                            }
-                        ],
-                    }
+                    {"message": "No code"},
                 ],
-                "payments": [
-                    {
-                        "paymentForm": "1",
-                        "paymentMethod": "10",
-                        "paymentDueDate": "2021-08-30",
-                    }
-                ],
+            )
+        )
+
+        assert isinstance(invoice, FailedInvoiceResponse)
+        assert invoice.errors[0].code == "EPR504"
+        assert invoice.errors[0].message == (
+            "Resend Error. Signature date is different from shipping date."
+        )
+        assert invoice.errors[1].code is None
+        assert invoice.cufe is None
+
+    def test_failed_keeps_whatever_was_generated_before_the_failure(self):
+        invoice = _parse(_invoice_payload("FAILED", cufe=CUFE))
+
+        assert invoice.cufe == CUFE
+        assert invoice.errors is None
+
+    @pytest.mark.parametrize("missing", list(ISSUED_FIELDS))
+    def test_waiting_response_requires_each_issued_field(self, missing):
+        fields = {k: v for k, v in ISSUED_FIELDS.items() if k != missing}
+
+        payload = _invoice_payload("WAITING_RESPONSE", **fields)
+
+        with pytest.raises(ValidationError) as exc_info:
+            _parse(payload)
+
+        assert exc_info.value.errors()[0]["loc"] == ("WAITING_RESPONSE", missing)
+
+    @pytest.mark.parametrize("missing", list(VERDICT_FIELDS))
+    def test_sent_requires_the_verdict(self, missing):
+        verdict = {k: v for k, v in VERDICT_FIELDS.items() if k != missing}
+
+        payload = _invoice_payload("SENT", **ISSUED_FIELDS, **verdict)
+
+        with pytest.raises(ValidationError) as exc_info:
+            _parse(payload)
+
+        assert exc_info.value.errors()[0]["loc"] == ("SENT", missing)
+
+    @pytest.mark.parametrize("status", ["PENDING", "", None, 123])
+    def test_unknown_status_is_rejected(self, status):
+        payload = _invoice_payload(status)
+
+        with pytest.raises(ValidationError) as exc_info:
+            _parse(payload)
+
+        assert exc_info.value.errors()[0]["type"] == "union_tag_invalid"
+
+    def test_missing_status_is_rejected(self):
+        payload = _invoice_payload("REGISTERED")
+        del payload["status"]
+
+        with pytest.raises(ValidationError) as exc_info:
+            _parse(payload)
+
+        assert exc_info.value.errors()[0]["type"] == "union_tag_not_found"
+
+    def test_json_input_builds_the_variant(self):
+        payload = _invoice_payload("WAITING_RESPONSE", **ISSUED_FIELDS)
+
+        invoice = TypeAdapter(AnyInvoiceResponse).validate_json(json.dumps(payload))
+
+        assert isinstance(invoice, WaitingInvoiceResponse)
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            _invoice_payload("REGISTERED"),
+            _invoice_payload("WAITING_RESPONSE", **ISSUED_FIELDS),
+            _invoice_payload("SENT", **ISSUED_FIELDS, **VERDICT_FIELDS),
+            _invoice_payload("FAILED"),
+        ],
+    )
+    def test_every_variant_is_an_invoice_response(self, payload):
+        assert isinstance(_parse(payload), InvoiceResponse)
+
+    def test_base_rejects_an_unknown_status(self):
+        payload = _invoice_payload("PENDING")
+
+        with pytest.raises(ValidationError):
+            InvoiceResponse.model_validate(payload)
+
+    def test_unknown_fields_are_ignored(self):
+        invoice = _parse(
+            _invoice_payload("SENT", **ISSUED_FIELDS, **VERDICT_FIELDS, newField=1)
+        )
+
+        assert isinstance(invoice, SentInvoiceResponse)
+
+
+def _client_returning(response, async_mode=False):
+    client = ApiClient(
+        ApiConfig(api_key="key", environment="sandbox"), async_mode=async_mode
+    )
+    if async_mode:
+
+        async def stub(method, endpoint, **kwargs):
+            return response
+
+    else:
+
+        def stub(method, endpoint, **kwargs):
+            return response
+
+    client.invoices.resource.request_method = stub
+    return client
+
+
+class TestInvoicesThroughClient:
+    def test_get_returns_the_invoice_while_waiting_on_the_dian(self):
+        waiting = _invoice_payload("WAITING_RESPONSE", **ISSUED_FIELDS)
+        client = _client_returning({"invoice": waiting})
+
+        invoice = client.invoices.get(waiting["id"])
+
+        assert isinstance(invoice, WaitingInvoiceResponse)
+        assert invoice.id == waiting["id"]
+
+    def test_list_builds_the_variant_of_each_invoice(self):
+        client = _client_returning(
+            {
+                "invoices": [
+                    _invoice_payload("WAITING_RESPONSE", **ISSUED_FIELDS),
+                    _invoice_payload("REGISTERED"),
+                ]
             }
         )
-        invoice = self.client.invoices.create(invoice_data)
-        self.assertIsNotNone(invoice.id)
+
+        invoices = client.invoices.list()
+
+        assert [type(invoice) for invoice in invoices] == [
+            WaitingInvoiceResponse,
+            RegisteredInvoiceResponse,
+        ]
+
+    def test_create_builds_the_variant(self):
+        sent = _invoice_payload("SENT", **ISSUED_FIELDS, **VERDICT_FIELDS)
+        client = _client_returning({"invoice": sent})
+
+        invoice = client.invoices.create(build_invoice())
+
+        assert isinstance(invoice, SentInvoiceResponse)
+
+    def test_async_create_builds_the_variant(self):
+        waiting = _invoice_payload("WAITING_RESPONSE", **ISSUED_FIELDS)
+        client = _client_returning({"invoice": waiting}, async_mode=True)
+
+        invoice = asyncio.run(client.invoices.create(build_invoice()))
+
+        assert isinstance(invoice, WaitingInvoiceResponse)
+
+    def test_get_wraps_an_unknown_status_in_a_parse_error(self):
+        response = {"invoice": _invoice_payload("PENDING")}
+        client = _client_returning(response)
+
+        with pytest.raises(AlegraResponseParseError) as exc_info:
+            client.invoices.get("any-id")
+
+        assert exc_info.value.response == response
+
+
+class TestDiscountOrCharge:
+    FIELDS = {
+        "isCharge": True,
+        "reason": "Redondeo",
+        "reasonCode": "02",
+        "percentageAmount": 0.1,
+        "amount": 100.0,
+        "baseAmount": 1000.0,
+    }
+
+    def test_reason_code_is_serialized(self):
+        discount = DiscountOrCharge(**self.FIELDS)
+
+        assert discount.model_dump()["reasonCode"] == "02"
+
+    def test_reason_code_is_required(self):
+        fields = {k: v for k, v in self.FIELDS.items() if k != "reasonCode"}
+
+        with pytest.raises(ValidationError) as exc_info:
+            DiscountOrCharge(**fields)
+
+        assert exc_info.value.errors()[0]["loc"] == ("reasonCode",)
+
+    def test_reason_code_reaches_the_invoice_payload(self):
+        discount = DiscountOrCharge(**self.FIELDS)
+        invoice = build_invoice().model_copy(update={"discountsAndCharges": [discount]})
+
+        payload = ApiResource(None, "invoices", None, {})._prepare_data(invoice)
+
+        assert payload["discountsAndCharges"][0]["reasonCode"] == "02"
